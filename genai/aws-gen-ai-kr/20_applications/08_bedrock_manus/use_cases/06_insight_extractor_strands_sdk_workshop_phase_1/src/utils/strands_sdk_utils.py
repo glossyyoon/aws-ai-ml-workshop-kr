@@ -8,7 +8,7 @@ from strands import Agent
 from strands.models import BedrockModel
 from botocore.config import Config
 from botocore.exceptions import ClientError
-from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
+from langchain_core.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from strands.types.exceptions import EventLoopException
 
 from strands.agent.agent_result import AgentResult
@@ -115,7 +115,7 @@ class strands_utils():
         tools = kwargs.get("tools", None)
         streaming = kwargs.get("streaming", True)
         
-        context_overflow_window_size = kwargs.get("context_overflow_window_size", 7)
+        context_overflow_window_size = kwargs.get("context_overflow_window_size", 15)
         context_overflow_should_truncate_results = kwargs.get("context_overflow_should_truncate_results", False)
 
         prompt_cache, cache_type = prompt_cache_info
@@ -129,7 +129,7 @@ class strands_utils():
             model=llm,
             system_prompt=system_prompts,
             tools=tools,
-            conversation_manager=CustomConversationManager(
+            conversation_manager=ConversationEditor(
                 window_size=context_overflow_window_size,
                 should_truncate_results=context_overflow_should_truncate_results
             ),
@@ -370,6 +370,8 @@ class strands_utils():
         callback_reasoning = ColoredStreamingCallback('cyan')        
         callback_tool = ColoredStreamingCallback('yellow')
 
+        #print ("event", event)
+
         if event:
             if event.get("event_type") == "text_chunk":
                 callback_default.on_llm_new_token(event.get('data', ''))
@@ -447,36 +449,36 @@ class FunctionNode(MultiAgentBase):
         )
 
 
-class CustomConversationManager(SlidingWindowConversationManager):
-    
+class ConversationEditor(SlidingWindowConversationManager):
+
     """
     Manager that only operates on overflow.
-        
+
         Args:
-            window_size (int, optional): Maximum number of messages to retain when 
+            window_size (int, optional): Maximum number of messages to retain when
                 context overflow occurs. Defaults to 20.
-            should_truncate_results (bool, optional): If True, truncate large tool 
-                results with a placeholder message when overflow happens. If False, 
-                preserve full tool results but remove more historical messages. 
+            should_truncate_results (bool, optional): If True, truncate large tool
+                results with a placeholder message when overflow happens. If False,
+                preserve full tool results but remove more historical messages.
                 Defaults to True.
     """
-    
+
     def __init__(self, window_size=7, should_truncate_results=False):
         super().__init__(
             window_size=window_size,
             should_truncate_results=should_truncate_results
         )
-    
+
     def apply_management(self, agent, **kwargs):
         """After each event loop - do nothing"""
         print("None")
-        pass  
-    
+        pass
+
     def reduce_context(self, agent, e=None, **kwargs):
         """Only on overflow - use parent class's reduce_context"""
         print(f"⚠️ Overflow occurred! Cleaning up {len(agent.messages)} messages...")
-    
+
         # 부모 클래스의 reduce_context는 should_truncate_results를 자동으로 처리
         super().reduce_context(agent, e, **kwargs)
-        
+
         print(f"✅ Cleanup complete: {len(agent.messages)} messages remaining")
