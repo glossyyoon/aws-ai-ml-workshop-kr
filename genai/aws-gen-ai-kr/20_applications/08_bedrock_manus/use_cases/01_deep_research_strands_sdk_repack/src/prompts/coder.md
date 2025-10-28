@@ -171,6 +171,7 @@ df = pd.read_csv('data.csv')  # NameError: 'pd' not defined
   import matplotlib.font_manager as fm
   import lovelyplots  # Required import - DO NOT omit
   import os
+  from adjustText import adjust_text  # For preventing label overlaps in scatter plots
 
   # ULTRA-CRITICAL: Apply Korean font to ALL charts (not just Korean text)
   plt.rcParams['font.family'] = ['NanumGothic']

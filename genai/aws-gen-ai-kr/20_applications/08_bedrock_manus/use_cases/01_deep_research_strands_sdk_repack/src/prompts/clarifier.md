@@ -1,4 +1,4 @@
----
+<!-- ---
 CURRENT_TIME: {CURRENT_TIME}
 ---
 Your task is to generate follow-up questions to enhance your understanding of the user's research topic.
@@ -46,4 +46,4 @@ CRITICAL: Do NOT wrap the JSON in markdown code blocks. Output the raw JSON dire
 - Questions should be designed to gather comprehensive information without overwhelming the user
 - Focus on understanding the user's intent, goals, and requirements
 - Questions should help narrow down the scope and direction of the research
-</note>
+</note> -->

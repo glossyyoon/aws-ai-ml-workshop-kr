@@ -65,7 +65,7 @@ async def clarification_node(task=None, **kwargs):
         agent, request_prompt, agent_name="clarifier", source="clarification_node"):
         if event.get("event_type") == "text_chunk": full_text += event.get("data", "")
     response = {"text": full_text}
-    follow_up_questions = json.loads(response["text"])
+    # follow_up_questions = json.loads(response["text"])
 
     # Store data directly in shared global storage
     if 'shared' not in _global_node_states: _global_node_states['shared'] = {}
@@ -75,7 +75,7 @@ async def clarification_node(task=None, **kwargs):
     shared_state['messages'] = agent.messages
     shared_state['request'] = request
     shared_state['request_prompt'] = request_prompt
-    shared_state['follow_up_questions'] = follow_up_questions["questions"]
+    # shared_state['follow_up_questions'] = follow_up_questions["questions"]
 
     # Build and update history
     if 'history' not in shared_state: 
@@ -87,50 +87,50 @@ async def clarification_node(task=None, **kwargs):
     # Return response only
     return response
 
-async def human_feedback_node(task=None, **kwargs):
+# async def human_feedback_node(task=None, **kwargs):
 
-    """Node for the human_feedback agent that improve understanding of user's intent."""
-    global _global_node_states
+#     """Node for the human_feedback agent that improve understanding of user's intent."""
+#     global _global_node_states
 
-    log_node_start("Human_feedback")
+#     log_node_start("Human_feedback")
 
-    # Extract shared state from global storage
-    shared_state = _global_node_states.get('shared', None)
+#     # Extract shared state from global storage
+#     shared_state = _global_node_states.get('shared', None)
 
-    # Get request from shared state (task parameter not used in planner)
-    #request = shared_state.get("request", "") if shared_state else ""
-    follow_up_questions = shared_state.get("follow_up_questions", "") if shared_state else ""
-    follow_up_questions_str = "\n".join(follow_up_questions)
+#     # Get request from shared state (task parameter not used in planner)
+#     #request = shared_state.get("request", "") if shared_state else ""
+#     follow_up_questions = shared_state.get("follow_up_questions", "") if shared_state else ""
+#     follow_up_questions_str = "\n".join(follow_up_questions)
 
-    if not shared_state:
-        logger.warning("No shared state found in global storage")
-        return None, {"text": "No shared state available"}
+#     if not shared_state:
+#         logger.warning("No shared state found in global storage")
+#         return None, {"text": "No shared state available"}
     
-    # Get feedback on the report plan from interrupt
-    interrupt_message = f"""\n\nPlease provide addtional information on your topics. 
-                        \n\n{follow_up_questions_str}\n
-                        \nprovide answers on follow-up questions:"""
+#     # Get feedback on the report plan from interrupt
+#     interrupt_message = f"""\n\nPlease provide addtional information on your topics. 
+#                         \n\n{follow_up_questions_str}\n
+#                         \nprovide answers on follow-up questions:"""
     
-    # 인터럽트 발생시키기
-    logger.info(f"{Colors.GREEN}{interrupt_message}{Colors.END}")
-    feedback = input()
+#     # 인터럽트 발생시키기
+#     logger.info(f"{Colors.GREEN}{interrupt_message}{Colors.END}")
+#     feedback = input()
 
-    # Store data directly in shared global storage
-    if 'shared' not in _global_node_states: _global_node_states['shared'] = {}
-    shared_state = _global_node_states['shared']
+#     # Store data directly in shared global storage
+#     if 'shared' not in _global_node_states: _global_node_states['shared'] = {}
+#     shared_state = _global_node_states['shared']
 
-    # Update shared global state
-    shared_state['user_feedback'] = feedback
+#     # Update shared global state
+#     shared_state['user_feedback'] = feedback
 
-    # Build and update history
-    if 'history' not in shared_state: shared_state['history'] = []
-    shared_state['history'].append({"agent":"human_feedback", "message": feedback})
+#     # Build and update history
+#     if 'history' not in shared_state: shared_state['history'] = []
+#     shared_state['history'].append({"agent":"human_feedback", "message": feedback})
 
-    log_node_complete("Human_feedback")
+#     log_node_complete("Human_feedback")
 
-    # Return response in dictionary format (matching other nodes)
-    response = {"text": feedback}
-    return response
+#     # Return response in dictionary format (matching other nodes)
+#     response = {"text": feedback}
+#     return response
 
 async def planner_node(task=None, **kwargs):
 
@@ -143,8 +143,8 @@ async def planner_node(task=None, **kwargs):
 
     # Get request from shared state (task parameter not used in planner)
     request = shared_state.get("request", "") if shared_state else ""
-    follow_up_questions = shared_state.get("follow_up_questions", "") if shared_state else ""
-    user_feedback = shared_state.get("user_feedback", "") if shared_state else ""
+    # follow_up_questions = shared_state.get("follow_up_questions", "") if shared_state else ""
+    # user_feedback = shared_state.get("user_feedback", "") if shared_state else ""
     
     if not shared_state:
         logger.warning("No shared state found in global storage")
@@ -154,9 +154,9 @@ async def planner_node(task=None, **kwargs):
         agent_name="planner",
         system_prompts=apply_prompt_template(
             prompt_name="planner",
-            prompt_context={"USER_REQUEST": request, "FOLLOW_UP_QUESTUONS": follow_up_questions, "USER_FEEDBACK": user_feedback}
+            prompt_context={"USER_REQUEST": request}
         ),
-        agent_type="claude-sonnet-4", # claude-sonnet-3-7
+        agent_type="claude-sonnet-3-7", # claude-sonnet-3-7
         enable_reasoning=True,
         prompt_cache_info=(False, None),  # enable prompt caching for reasoning agent, (False, None), (True, "default")
         streaming=True,

@@ -1,0 +1,51 @@
+Category,Specific_Technology,Impact,Maturity,Momentum
+Artificial Intelligence and Machine Learning,Drug Discovery AI,8,6,9
+Artificial Intelligence and Machine Learning,Clinical Trial Optimization,8,6,9
+Artificial Intelligence and Machine Learning,Precision Medicine AI,8,6,9
+Artificial Intelligence and Machine Learning,Manufacturing Quality Control AI,8,6,9
+Artificial Intelligence and Machine Learning,Natural Language Processing,8,6,9
+Advanced Biotechnology,mRNA Technology,9,5,8
+Advanced Biotechnology,CRISPR and Gene Editing,9,5,8
+Advanced Biotechnology,Synthetic Biology,9,5,8
+Advanced Biotechnology,Organoids and 3D Cell Culture,9,5,8
+Advanced Biotechnology,Microbiome Therapeutics,9,5,8
+Digital Health and Connected Care,Digital Therapeutics,7,7,7
+Digital Health and Connected Care,Remote Patient Monitoring,7,7,7
+Digital Health and Connected Care,Decentralized Clinical Trials,7,7,7
+Digital Health and Connected Care,Digital Biomarkers,7,7,7
+Digital Health and Connected Care,Virtual Care Platforms,7,7,7
+Advanced Manufacturing and Supply Chain,Continuous Manufacturing,6,6,6
+Advanced Manufacturing and Supply Chain,3D Printing of Pharmaceuticals,6,6,6
+Advanced Manufacturing and Supply Chain,Smart Factories,6,6,6
+Advanced Manufacturing and Supply Chain,Blockchain for Supply Chain,6,6,6
+Advanced Manufacturing and Supply Chain,Predictive Maintenance,6,6,6
+Data Science and Analytics,Real-World Evidence,8,7,8
+Data Science and Analytics,Predictive Analytics,8,7,8
+Data Science and Analytics,Health Economics Modeling,8,7,8
+Data Science and Analytics,Knowledge Graphs,8,7,8
+Data Science and Analytics,Quantum Computing Applications,8,7,8
+Nanotechnology and Advanced Materials,Nanomedicine Delivery Systems,7,5,6
+Nanotechnology and Advanced Materials,Smart Materials,7,5,6
+Nanotechnology and Advanced Materials,Bioelectronics,7,5,6
+Nanotechnology and Advanced Materials,Lab-on-a-chip,7,5,6
+Nanotechnology and Advanced Materials,Advanced Biomaterials,7,5,6
+Automation and Robotics,Laboratory Automation,6,8,7
+Automation and Robotics,Autonomous Manufacturing,6,8,7
+Automation and Robotics,Robotic Surgery,6,8,7
+Automation and Robotics,Drone Delivery,6,8,7
+Automation and Robotics,Collaborative Robots,6,8,7
+Extended Reality Technologies,Virtual Reality Training,5,4,5
+Extended Reality Technologies,Augmented Reality Guided Procedures,5,4,5
+Extended Reality Technologies,Digital Twins,5,4,5
+Extended Reality Technologies,Mixed Reality Collaboration,5,4,5
+Extended Reality Technologies,Therapeutic VR,5,4,5
+Quantum Technologies,Quantum Computing for Drug Discovery,7,2,7
+Quantum Technologies,Quantum Sensors,7,2,7
+Quantum Technologies,Quantum Cryptography,7,2,7
+Quantum Technologies,Quantum Machine Learning,7,2,7
+Quantum Technologies,Quantum Simulation,7,2,7
+Sustainable and Green Technologies,Green Chemistry,5,7,8
+Sustainable and Green Technologies,Sustainable Packaging,5,7,8
+Sustainable and Green Technologies,Energy-Efficient Manufacturing,5,7,8
+Sustainable and Green Technologies,Water Recycling Systems,5,7,8
+Sustainable and Green Technologies,Carbon Capture,5,7,8

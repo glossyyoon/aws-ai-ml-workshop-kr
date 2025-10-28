@@ -5,7 +5,7 @@ from strands.types.tools import ToolResult, ToolUse
 from src.utils.strands_sdk_utils import strands_utils
 from src.prompts.template import apply_prompt_template
 from src.utils.common_utils import get_message_from_string
-from src.tools import python_repl_tool, bash_tool, crawl_tool, tavily_tool
+from src.tools import python_repl_tool, bash_tool, tavily_tool
 
 
 # Simple logger setup
@@ -74,7 +74,7 @@ def handle_researcher_agent_tool(task: Annotated[str, "The research task or ques
         system_prompts=apply_prompt_template(prompt_name="researcher", prompt_context={"USER_REQUEST": request_prompt, "FULL_PLAN": full_plan}),
         agent_type="claude-sonnet-3-7", #claude-sonnet-3-7, claude-sonnet-4
         enable_reasoning=False,
-        tools=[crawl_tool, tavily_tool, python_repl_tool, bash_tool],
+        tools=[tavily_tool, python_repl_tool, bash_tool],
         streaming=True  # Enable streaming for consistency
     )
 

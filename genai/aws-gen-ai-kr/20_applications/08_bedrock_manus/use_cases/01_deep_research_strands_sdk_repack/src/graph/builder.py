@@ -5,7 +5,7 @@ from src.utils.strands_sdk_utils import FunctionNode
 from src.utils.event_queue import has_events, get_event
 from .nodes import (
     clarification_node,
-    human_feedback_node,
+    # human_feedback_node,
     planner_node,
     supervisor_node,
     #should_handoff_to_planner,
@@ -73,12 +73,12 @@ def build_graph():
     # Add nodes
     
     clarifier = FunctionNode(func=clarification_node, name="clarifier")
-    human_feedback = FunctionNode(func=human_feedback_node, name="human_feedback")
+    # human_feedback = FunctionNode(func=human_feedback_node, name="human_feedback")
     planner = FunctionNode(func=planner_node, name="planner")
     supervisor = FunctionNode(func=supervisor_node, name="supervisor")
 
     builder.add_node(clarifier, "clarifier")
-    builder.add_node(human_feedback, "human_feedback")
+    # builder.add_node(human_feedback, "human_feedback")
     builder.add_node(planner, "planner")
     builder.add_node(supervisor, "supervisor")
     
@@ -87,8 +87,9 @@ def build_graph():
 
     # Set entry point and edges
     builder.set_entry_point("clarifier")
-    builder.add_edge("clarifier", "human_feedback")
-    builder.add_edge("human_feedback", "planner")
+    builder.add_edge("clarifier", "planner")
+    # builder.add_edge("clarifier", "human_feedback")
+    # builder.add_edge("human_feedback", "planner")
     builder.add_edge("planner", "supervisor")
     #builder.add_edge("coordinator", "planner", condition=should_handoff_to_planner)
     
