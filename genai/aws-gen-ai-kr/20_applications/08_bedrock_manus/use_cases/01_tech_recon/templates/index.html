@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tech Recon - Real-time Monitoring</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+            padding: 20px;
+            min-height: 70vh;
+        }
+
+        .log-section {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .log-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .log-header h2 {
+            color: #667eea;
+            font-size: 1.5em;
+        }
+
+        .status-badge {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9em;
+            text-transform: uppercase;
+        }
+
+        .status-idle {
+            background: #e9ecef;
+            color: #6c757d;
+        }
+
+        .status-running {
+            background: #28a745;
+            color: white;
+            animation: pulse 2s infinite;
+        }
+
+        .status-error {
+            background: #dc3545;
+            color: white;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .log-container {
+            flex: 1;
+            background: #1e1e1e;
+            border-radius: 6px;
+            padding: 15px;
+            overflow-y: auto;
+            max-height: 600px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.5;
+        }
+
+        .log-entry {
+            margin-bottom: 8px;
+            padding: 5px;
+            border-radius: 3px;
+        }
+
+        .log-timestamp {
+            color: #6c757d;
+            font-size: 0.85em;
+            margin-right: 8px;
+        }
+
+        .log-text { color: #e0e0e0; }
+        .log-reasoning { color: #61dafb; }
+        .log-tool { color: #ffd700; }
+        .log-tool_result { color: #90ee90; }
+        .log-error { color: #ff6b6b; background: rgba(255,107,107,0.1); }
+        .log-success { color: #51cf66; font-weight: bold; }
+        .log-system { color: #9775fa; font-weight: bold; }
+
+        .control-section {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .control-section h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .control-group {
+            margin-bottom: 25px;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: #495057;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            flex: 1;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .files-section {
+            background: white;
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+
+        .files-section h3 {
+            color: #495057;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+
+        .file-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #dee2e6;
+            transition: background 0.2s;
+        }
+
+        .file-item:hover {
+            background: #f8f9fa;
+        }
+
+        .file-info {
+            flex: 1;
+        }
+
+        .file-name {
+            font-weight: bold;
+            color: #495057;
+            margin-bottom: 3px;
+        }
+
+        .file-meta {
+            font-size: 0.85em;
+            color: #6c757d;
+        }
+
+        .file-part {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.75em;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+
+        .part1-badge {
+            background: #e7f5ff;
+            color: #1971c2;
+        }
+
+        .part2-badge {
+            background: #fff0f6;
+            color: #c2255c;
+        }
+
+        .download-btn {
+            padding: 6px 12px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+            transition: all 0.2s;
+        }
+
+        .download-btn:hover {
+            background: #764ba2;
+            transform: scale(1.05);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            color: #6c757d;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        .log-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .log-controls button {
+            padding: 8px 16px;
+            font-size: 0.9em;
+        }
+
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .connection-status {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .connected {
+            background: #28a745;
+            color: white;
+        }
+
+        .disconnected {
+            background: #dc3545;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Tech Recon Real-time Monitoring</h1>
+            <p>AWS Bedrock Manus Technical Reconnaissance System</p>
+        </div>
+
+        <div class="main-content">
+            <!-- Log Section -->
+            <div class="log-section">
+                <div class="log-header">
+                    <h2>📊 Real-time Logs</h2>
+                    <span id="statusBadge" class="status-badge status-idle">Idle</span>
+                </div>
+
+                <div class="log-controls">
+                    <button onclick="clearLogs()" class="btn-secondary">Clear Logs</button>
+                    <button onclick="toggleAutoScroll()" class="btn-secondary" id="autoScrollBtn">Auto-scroll: ON</button>
+                </div>
+
+                <div class="log-container" id="logContainer">
+                    <div class="log-entry log-system">
+                        <span class="log-timestamp"></span>
+                        <span>System ready. Select Part1 or Part2 to execute.</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Control Section -->
+            <div class="control-section">
+                <h2>⚙️ Control Panel</h2>
+
+                <div class="stats">
+                    <div class="stat-card">
+                        <div class="stat-value" id="logCount">0</div>
+                        <div class="stat-label">Log Entries</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="fileCount">0</div>
+                        <div class="stat-label">Generated Files</div>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label>Select Part to Execute:</label>
+                    <div class="button-group">
+                        <button onclick="startExecution('Part1')" class="btn-primary" id="part1Btn">
+                            Run Part1
+                        </button>
+                        <button onclick="startExecution('Part2')" class="btn-success" id="part2Btn">
+                            Run Part2
+                        </button>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label>Download Files:</label>
+                    <div class="button-group">
+                        <button onclick="downloadAll('part1')" class="btn-secondary">
+                            All Part1
+                        </button>
+                        <button onclick="downloadAll('part2')" class="btn-secondary">
+                            All Part2
+                        </button>
+                    </div>
+                    <button onclick="downloadAll('all')" class="btn-secondary" style="width: 100%; margin-top: 10px;">
+                        Download All Files
+                    </button>
+                </div>
+
+                <div class="files-section">
+                    <h3>📁 Generated Files</h3>
+                    <div class="file-list" id="fileList">
+                        <div class="empty-state">No files available</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="connectionStatus" class="connection-status disconnected">Connecting...</div>
+
+    <script>
+        // WebSocket connection
+        const socket = io();
+        let autoScroll = true;
+        let executionRunning = false;
+
+        // Connection status management
+        socket.on('connect', function() {
+            console.log('Connected to server');
+            document.getElementById('connectionStatus').textContent = 'Connected';
+            document.getElementById('connectionStatus').className = 'connection-status connected';
+            loadFiles();
+        });
+
+        socket.on('disconnect', function() {
+            console.log('Disconnected from server');
+            document.getElementById('connectionStatus').textContent = 'Disconnected';
+            document.getElementById('connectionStatus').className = 'connection-status disconnected';
+        });
+
+        // Receive logs
+        socket.on('log', function(data) {
+            addLogEntry(data);
+            updateLogCount();
+        });
+
+        // Receive status changes
+        socket.on('status', function(data) {
+            updateStatus(data);
+            if (data.status === 'completed' || data.status === 'error') {
+                executionRunning = false;
+                updateButtons();
+                loadFiles();
+            }
+        });
+
+        function addLogEntry(data) {
+            const logContainer = document.getElementById('logContainer');
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${data.category || data.type || 'text'}`;
+
+            const timestamp = new Date(data.timestamp).toLocaleTimeString('ko-KR');
+            const timestampSpan = document.createElement('span');
+            timestampSpan.className = 'log-timestamp';
+            timestampSpan.textContent = `[${timestamp}]`;
+
+            const messageSpan = document.createElement('span');
+            messageSpan.textContent = data.message;
+
+            entry.appendChild(timestampSpan);
+            entry.appendChild(messageSpan);
+            logContainer.appendChild(entry);
+
+            if (autoScroll) {
+                logContainer.scrollTop = logContainer.scrollHeight;
+            }
+        }
+
+        function updateStatus(data) {
+            const badge = document.getElementById('statusBadge');
+
+            if (data.status === 'running') {
+                badge.textContent = `Running - ${data.part}`;
+                badge.className = 'status-badge status-running';
+                executionRunning = true;
+            } else if (data.status === 'completed') {
+                badge.textContent = 'Completed';
+                badge.className = 'status-badge status-idle';
+                executionRunning = false;
+            } else if (data.status === 'error') {
+                badge.textContent = 'Error';
+                badge.className = 'status-badge status-error';
+                executionRunning = false;
+            } else {
+                badge.textContent = 'Idle';
+                badge.className = 'status-badge status-idle';
+                executionRunning = false;
+            }
+
+            updateButtons();
+        }
+
+        function updateButtons() {
+            const part1Btn = document.getElementById('part1Btn');
+            const part2Btn = document.getElementById('part2Btn');
+
+            part1Btn.disabled = executionRunning;
+            part2Btn.disabled = executionRunning;
+        }
+
+        function startExecution(part) {
+            if (executionRunning) {
+                alert('Already running.');
+                return;
+            }
+
+            if (!confirm(`Do you want to execute ${part}?`)) {
+                return;
+            }
+
+            fetch('/api/start', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ part: part })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Execution started:', data);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while starting execution.');
+            });
+        }
+
+        function loadFiles() {
+            fetch('/api/files')
+                .then(response => response.json())
+                .then(data => {
+                    displayFiles(data.files);
+                    document.getElementById('fileCount').textContent = data.files.length;
+                })
+                .catch(error => {
+                    console.error('Error loading files:', error);
+                });
+        }
+
+        function displayFiles(files) {
+            const fileList = document.getElementById('fileList');
+
+            if (files.length === 0) {
+                fileList.innerHTML = '<div class="empty-state">No files available</div>';
+                return;
+            }
+
+            fileList.innerHTML = '';
+
+            files.forEach(file => {
+                const item = document.createElement('div');
+                item.className = 'file-item';
+
+                const info = document.createElement('div');
+                info.className = 'file-info';
+
+                const partBadge = document.createElement('span');
+                partBadge.className = `file-part ${file.part}1-badge`;
+                partBadge.textContent = file.part.toUpperCase();
+
+                const name = document.createElement('div');
+                name.className = 'file-name';
+                name.textContent = file.name;
+
+                const meta = document.createElement('div');
+                meta.className = 'file-meta';
+                const fileSize = (file.size / 1024).toFixed(2);
+                meta.textContent = `${fileSize} KB`;
+
+                info.appendChild(partBadge);
+                info.appendChild(name);
+                info.appendChild(meta);
+
+                const downloadBtn = document.createElement('button');
+                downloadBtn.className = 'download-btn';
+                downloadBtn.textContent = 'Download';
+                downloadBtn.onclick = () => downloadFile(file.path);
+
+                item.appendChild(info);
+                item.appendChild(downloadBtn);
+                fileList.appendChild(item);
+            });
+        }
+
+        function downloadFile(path) {
+            window.location.href = `/api/download/${path}`;
+        }
+
+        function downloadAll(part) {
+            window.location.href = `/api/download-all/${part}`;
+        }
+
+        function clearLogs() {
+            const logContainer = document.getElementById('logContainer');
+            logContainer.innerHTML = '<div class="log-entry log-system"><span class="log-timestamp"></span><span>Logs cleared.</span></div>';
+            updateLogCount();
+        }
+
+        function toggleAutoScroll() {
+            autoScroll = !autoScroll;
+            const btn = document.getElementById('autoScrollBtn');
+            btn.textContent = `Auto-scroll: ${autoScroll ? 'ON' : 'OFF'}`;
+        }
+
+        function updateLogCount() {
+            const count = document.querySelectorAll('.log-entry').length;
+            document.getElementById('logCount').textContent = count;
+        }
+
+        // Initial load
+        window.onload = function() {
+            loadFiles();
+            // Refresh file list periodically (every 5 seconds)
+            setInterval(loadFiles, 5000);
+        };
+    </script>
+</body>
+</html>

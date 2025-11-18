@@ -1,0 +1,30 @@
+<img src=https://d2xcbapsssxs61.cloudfront.net/deepinsight/image2.png width=600px>
+
+<img src=https://d2xcbapsssxs61.cloudfront.net/deepinsight/image4.png width=600px>
+
+**1. Problem**
+Enterprises requiring customization and control for agentic AI face challenges with managed platforms. When deep modification of agent behavior, regulatory compliance within AWS, and domain-specific requirements are critical, Deep Insight provides an open, customizable agent framework for deployment and extension in their own environment. Traditional analytics answers questions—Deep Insight asks them for you, discovering critical questions you didn't know to ask. This is **Predictive Intelligence**: not "what happened?" but "you can improve your marketing campaign".
+
+**2. Quick Suite vs. Deep Insight**
+Quick Suite: Managed solution with 50+ connectors for general business tasks and customized agents.
+Deep Insight: Customizable toolkit deploying open-source code in customers' AWS VPCs, enabling free modification of prompts, agents, and workflows. Operates within AWS Customer VPC with data isolation for sensitive workloads.
+
+**3. Solution Approach**
+Built on Strands Agent and AgentCore, Deep Insight performs data exploration to advanced statistical analysis. Multi-agents (Coordinator, Planner, Supervisor, Coder, Validator, Reporter, Tracker) collaborate on complex tasks. Reports include calculation methods and data sources for verification, with automated professional PDF generation.
+
+Technical Innovation: Develops multi-agents using AWS Strands Agents SDK and Amazon Bedrock AgentCore Runtime (Identity, Gateway, Observability) for sophisticated collaboration systems with breakthrough capabilities:
+• **Causal AI**: Discovers causation, not just correlation
+• **Autonomous Insight Discovery**: Finds patterns humans never thought to look for
+• **Human-out-of-the-Loop**: Level 3 autonomous intelligence—discovery, analysis, prescription, action recommendations without human intervention
+• **Hallucination-Free Architecture**: Every insight automatically linked to source data for 100% verifiability
+• **Universal Data Understanding**: Instant analysis of CSV, PDF, JSON—any format, no preprocessing
+
+**4. Agent Architecture**
+Hierarchical multi-agent system: Coordinator (understands prompts), Planner (establishes plans), Supervisor (orchestrates workflow), Coder (executes analysis), Validator (verifies results), Reporter (generates reports with rich charts and graphs), Tracker (ensures transparency). Six specialized AI agents collaborate like human analysts, generating comprehensive reports with complete calculation methods and data source documentation.
+
+**5. Business Impact**
+    - Analysis time: 4-5 days → 15 minutes (96% reduction). **24/7 Ambient Business Intelligence** monitors your business continuously—weekend insights ready Monday morning. Transforms traditional workflows into multi-agent collaboration, dramatically reducing time from topic selection to report creation. Customers install in AWS VPC and customize based on open-source code, transforming agents for various purposes.
+    - 70.5% (31 participants from a workshop) confirmed plans to proceed with Deep Insight 
+    - Zero participants from a workshop indicated they would not pursue related projects
+
+**Impact**: Other AI tools are solutions. Deep Insight is your co-strategist.
