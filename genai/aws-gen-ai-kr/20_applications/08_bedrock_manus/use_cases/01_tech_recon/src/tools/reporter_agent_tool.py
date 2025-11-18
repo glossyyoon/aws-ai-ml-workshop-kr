@@ -75,12 +75,23 @@ def handle_reporter_agent_tool(_task: Annotated[str, "The reporting task or inst
         clues, messages = shared_state.get("clues", ""), shared_state.get("messages", [])
         artifact_folder = shared_state.get("artifact_folder", "./artifacts/")  # Get part-specific folder
         part1_folder = shared_state.get("part1_folder", "./artifacts/part1")  # For Part2 reference
+        user_input = shared_state.get("user_input", "part1")  # Get user input to determine part1 or part2
+
+        # Determine which prompt to use based on user_input (part1 or part2)
+        if user_input.lower() == "part2":
+            prompt_name = "reporter_part2"
+            agent_name = "reporter-2"
+            logger.info(f"\n{Colors.GREEN}[Using reporter_part2 prompt for reporter-2]{Colors.END}")
+        else:  # part1 is default
+            prompt_name = "reporter_part1"
+            agent_name = "reporter-1"
+            logger.info(f"\n{Colors.GREEN}[Using reporter_part1 prompt for reporter-1]{Colors.END}")
 
         # Create reporter agent with specialized tools using consistent pattern
         reporter_agent = strands_utils.get_agent(
-            agent_name="reporter",
+            agent_name=agent_name,
             system_prompts=apply_prompt_template(
-                prompt_name="reporter",
+                prompt_name=prompt_name,
                 prompt_context={
                     "USER_REQUEST": request_prompt,
                     "FULL_PLAN": full_plan,
@@ -102,7 +113,7 @@ def handle_reporter_agent_tool(_task: Annotated[str, "The reporting task or inst
         async def process_reporter_stream():
             full_text = ""
             async for event in strands_utils.process_streaming_response_yield(
-                reporter_agent, message, agent_name="reporter", source="reporter_tool"
+                reporter_agent, message, agent_name=agent_name, source="reporter_tool"
             ):
                 if event.get("event_type") == "text_chunk": full_text += event.get("data", "")
             return {"text": full_text}
@@ -115,10 +126,10 @@ def handle_reporter_agent_tool(_task: Annotated[str, "The reporting task or inst
 
     # # Original code - unlimited clues growth (commented out to prevent token overflow)
     # # Update clues
-    # clues = '\n\n'.join([clues, CLUES_FORMAT.format("reporter", response["text"])])
+    # clues = '\n\n'.join([clues, CLUES_FORMAT.format(agent_name, response["text"])])
 
     # New code - Update clues with size limit to prevent token overflow
-    new_clue = CLUES_FORMAT.format("reporter", response["text"])
+    new_clue = CLUES_FORMAT.format(agent_name, response["text"])
 
     # Keep only the last 3 clues to prevent unlimited growth
     clues_list = clues.split(CLUES_FORMAT.format("", "").split("</clues>")[0]) if clues else []
@@ -133,14 +144,14 @@ def handle_reporter_agent_tool(_task: Annotated[str, "The reporting task or inst
 
     # Update history
     history = shared_state.get("history", [])
-    history.append({"agent":"reporter", "message": response["text"]})
+    history.append({"agent": agent_name, "message": response["text"]})
 
     # Update shared state with reset messages (only keep last interaction)
-    shared_state['messages'] = [get_message_from_string(role="user", string=RESPONSE_FORMAT.format("reporter", response["text"]), imgs=[])]
+    shared_state['messages'] = [get_message_from_string(role="user", string=RESPONSE_FORMAT.format(agent_name, response["text"]), imgs=[])]
     shared_state['clues'] = clues
     shared_state['history'] = history
 
-    logger.info(f"\n{Colors.GREEN}Reporter Agent Tool completed{Colors.END}")
+    logger.info(f"\n{Colors.GREEN}{agent_name} Agent Tool completed{Colors.END}")
     return result_text
 
 # Function name must match tool name

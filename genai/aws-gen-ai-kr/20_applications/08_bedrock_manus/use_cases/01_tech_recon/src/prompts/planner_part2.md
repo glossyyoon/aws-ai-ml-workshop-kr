@@ -160,7 +160,7 @@ Good plan example for Part 2:
    - Updated domain/sub-domain appendix
    - Minimum 50 references from 2022+ sources
 [ ] **Final Quality Gate**: Verify ≤20 pages, English language, professional formatting
-[ ] [CRITICAL] Generate 5 reports of each top 5 technologies {technology}-{companyname}-finalreport.doc
+[ ] [CRITICAL] Generate 5 reports of each top 5 technologies {technology}-{companyname}-finalreport.docx
 [ ] Verify report completeness and template compliance
 
 </plan_example>
