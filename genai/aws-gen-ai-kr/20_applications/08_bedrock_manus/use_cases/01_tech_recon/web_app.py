@@ -25,80 +25,148 @@ from src.utils.strands_sdk_utils import strands_utils
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'tech-recon-secret-key-2025'
+app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0  # Disable caching for static files
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
+
+# Disable caching for all responses
+@app.after_request
+def add_header(response):
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '-1'
+    return response
 
 # Global state
 execution_state = {
     'running': False,
     'logs': [],
-    'current_part': None
+    'current_part': None,
+    'reasoning_buffer': ''  # Buffer for accumulating reasoning chunks
 }
 
 
 class WebLogger:
-    """Logger that captures terminal output and sends it to websocket"""
+    """Logger that captures terminal output and sends it to websocket - only complete lines"""
 
     def __init__(self, socketio_instance):
         self.socketio = socketio_instance
         self.terminal = sys.stdout
+        self.current_line_buffer = ""  # Buffer for current line being built
 
     def write(self, message):
-        """Override write method - output to both terminal and websocket"""
-        if message.strip():  # Exclude empty lines
-            self.terminal.write(message)
-            self.terminal.flush()
+        """Override write method - only send complete lines (those ending with newline)"""
+        # Always write to terminal immediately
+        self.terminal.write(message)
+        # Do NOT flush terminal to allow better buffering
 
-            # Send to websocket
+        # Add to buffer
+        self.current_line_buffer += message
+
+        # Only send when we have newlines
+        if '\n' in self.current_line_buffer:
+            # Split by newlines
+            lines = self.current_line_buffer.split('\n')
+
+            # All lines except the last are complete
+            for line in lines[:-1]:
+                if line.strip():  # Only send non-empty lines
+                    log_entry = {
+                        'timestamp': datetime.now().isoformat(),
+                        'message': line,
+                        'type': 'info',
+                        'category': 'text'
+                    }
+                    execution_state['logs'].append(log_entry)
+                    self.socketio.emit('log', log_entry)
+
+            # Keep the last part (incomplete line) in buffer
+            self.current_line_buffer = lines[-1]
+
+    def flush(self):
+        """Flush any remaining buffer"""
+        self.terminal.flush()
+
+        # Send any remaining buffered content as a complete line
+        if self.current_line_buffer.strip():
             log_entry = {
                 'timestamp': datetime.now().isoformat(),
-                'message': message.strip(),
-                'type': 'info'
+                'message': self.current_line_buffer,
+                'type': 'info',
+                'category': 'text'
             }
             execution_state['logs'].append(log_entry)
             self.socketio.emit('log', log_entry)
-
-    def flush(self):
-        self.terminal.flush()
+            self.current_line_buffer = ""
 
 
 def process_event_for_web(event, socketio_instance):
-    """Function to send events to websocket"""
+    """Function to send events to websocket - Shows reasoning, tool use, tool result, and text chunks
 
-    if event:
+    This function processes and displays:
+    - Text chunks (agent responses, INFO logs)
+    - Reasoning events (buffered and sent on sentence boundaries)
+    - Tool use events
+    - Tool result events
+    All other events are ignored.
+    """
+    if not event:
+        return
+
+    if event.get("event_type") == "text_chunk":
+        # Output text chunks directly to stdout (captured by WebLogger)
+        text_data = event.get('data', '')
+        if text_data:
+            print(text_data, end='')
+
+    elif event.get("event_type") == "reasoning":
+        # Accumulate reasoning chunks and only send on sentence boundaries
+        reasoning_text = event.get('reasoning_text', '')
+        if reasoning_text:
+            execution_state['reasoning_buffer'] += reasoning_text
+
+            # Check if we have a sentence ending (., !, ?, or newline)
+            # Or if buffer is getting too long (> 200 chars), send it anyway
+            buffer = execution_state['reasoning_buffer']
+
+            # Find the last sentence boundary
+            last_period = max(buffer.rfind('.'), buffer.rfind('!'), buffer.rfind('?'), buffer.rfind('\n'))
+
+            if last_period != -1 or len(buffer) > 200:
+                # Send everything up to and including the sentence boundary
+                if last_period != -1:
+                    to_send = buffer[:last_period + 1]
+                    execution_state['reasoning_buffer'] = buffer[last_period + 1:]
+                else:
+                    # Buffer too long, send everything
+                    to_send = buffer
+                    execution_state['reasoning_buffer'] = ''
+
+                # Output to stdout (captured by WebLogger)
+                print(to_send, end='')
+
+    elif event.get("event_type") == "tool_use":
+        # Skip tool_use events - don't display them
+        pass
+
+    elif event.get("event_type") == "tool_result":
+        tool_name = event.get("tool_name", "unknown")
+
+        # Skip bash_tool results - don't display them
+        if tool_name == "bash_tool":
+            return
+
+        output = event.get("output", "")
+
+        # Limit output length
+        if len(output) > 500:
+            output = output[:500] + "..."
+
         log_data = {
             'timestamp': datetime.now().isoformat(),
+            'message': f"[TOOL RESULT - {tool_name}]\n{output}",
             'type': 'event',
-            'event_type': event.get('event_type', 'unknown')
+            'category': 'tool_result'
         }
-
-        if event.get("event_type") == "text_chunk":
-            log_data['message'] = event.get('data', '')
-            log_data['category'] = 'text'
-
-        elif event.get("event_type") == "reasoning":
-            log_data['message'] = f"[REASONING] {event.get('reasoning_text', '')}"
-            log_data['category'] = 'reasoning'
-
-        elif event.get("event_type") == "tool_use":
-            tool_name = event.get("tool_name", "unknown")
-            log_data['message'] = f"[TOOL USE] {tool_name}"
-            log_data['category'] = 'tool'
-
-        elif event.get("event_type") == "tool_result":
-            tool_name = event.get("tool_name", "unknown")
-            output = event.get("output", "")
-
-            # Limit output length
-            if len(output) > 500:
-                output = output[:500] + "..."
-
-            log_data['message'] = f"[TOOL RESULT - {tool_name}]\n{output}"
-            log_data['category'] = 'tool_result'
-
-        else:
-            log_data['message'] = str(event)
-            log_data['category'] = 'other'
-
         execution_state['logs'].append(log_data)
         socketio_instance.emit('log', log_data)
 
@@ -106,19 +174,49 @@ def process_event_for_web(event, socketio_instance):
 async def run_graph_execution(user_query, socketio_instance):
     """Handle graph execution asynchronously"""
 
+    # Save original stdout
+    original_stdout = sys.stdout
+
     try:
         execution_state['running'] = True
         execution_state['current_part'] = user_query
         execution_state['logs'] = []
+        execution_state['reasoning_buffer'] = ''  # Reset reasoning buffer
 
         socketio_instance.emit('status', {'status': 'running', 'part': user_query})
 
+        # Emit initial planner running status
+        socketio_instance.emit('log', {
+            'timestamp': datetime.now().isoformat(),
+            'message': '=== Planner Agent Started ===',
+            'type': 'info',
+            'category': 'system'
+        })
+
+        # Redirect stdout to WebLogger to capture print() statements
+        web_logger = WebLogger(socketio_instance)
+        sys.stdout = web_logger
+
         payload = {"user_query": user_query}
 
-        # Process real-time events
+        # Process events: show reasoning, tool_use, tool_result, and text_chunk
         async for event in graph_streaming_execution(payload):
-            process_event_for_web(event, socketio_instance)
-            await asyncio.sleep(0)  # Yield to other tasks
+            if event:
+                event_type = event.get("event_type")
+
+                # Process reasoning, tool_use, tool_result, and text_chunk
+                if event_type in ["reasoning", "tool_use", "tool_result", "text_chunk"]:
+                    process_event_for_web(event, socketio_instance)
+
+            await asyncio.sleep(0.001)  # Much faster processing for quicker response
+
+        # Flush any remaining reasoning buffer
+        if execution_state['reasoning_buffer']:
+            print(execution_state['reasoning_buffer'], end='')
+            execution_state['reasoning_buffer'] = ''
+
+        # Flush the logger to ensure all buffered print() content is sent
+        web_logger.flush()
 
         socketio_instance.emit('status', {'status': 'completed', 'part': user_query})
         socketio_instance.emit('log', {
@@ -139,6 +237,8 @@ async def run_graph_execution(user_query, socketio_instance):
         socketio_instance.emit('status', {'status': 'error', 'error': str(e)})
 
     finally:
+        # Restore original stdout
+        sys.stdout = original_stdout
         execution_state['running'] = False
 
 
@@ -301,7 +401,7 @@ if __name__ == '__main__':
 
     # Parse command line arguments
     parser = argparse.ArgumentParser(description='Tech Recon Web Application')
-    parser.add_argument('--port', type=int, default=5000, help='Port to run the server on (default: 5000)')
+    parser.add_argument('--port', type=int, default=8050, help='Port to run the server on (default: 8050)')
     parser.add_argument('--host', type=str, default='0.0.0.0', help='Host to bind to (default: 0.0.0.0)')
     args = parser.parse_args()
 

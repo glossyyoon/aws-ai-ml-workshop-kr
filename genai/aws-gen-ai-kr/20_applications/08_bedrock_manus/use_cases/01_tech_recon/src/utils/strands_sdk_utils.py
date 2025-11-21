@@ -68,7 +68,9 @@ class ColoredStreamingCallback(StreamingStdOutCallbackHandler):
         self.reset_code = '\033[0m'
 
     def on_llm_new_token(self, token: str, **kwargs) -> None:
-        print(f"{self.color_code}{token}{self.reset_code}", end="", flush=True)
+        import sys
+        sys.stdout.write(f"{self.color_code}{token}{self.reset_code}")
+        # Remove flush to allow better buffering
 
 class strands_utils():
 

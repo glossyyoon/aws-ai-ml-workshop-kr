@@ -64,7 +64,7 @@ def conditional_artifact_cleanup(is_part1: bool):
         print(f"'{part1_folder}' folder created.\n")
         return part1_folder
     else:
-        # Part 2: part1 폴더 유지, part2 폴더 생성
+        # Part 2: part1 폴더 유지, part2 폴더만 삭제 후 재생성
         print(f"\n[Part 2 detected] artifacts/part2 created and reference part1.")
 
         # part1 폴더 존재 확인
@@ -81,6 +81,14 @@ def conditional_artifact_cleanup(is_part1: bool):
                 print(f"[경고] '{part1_folder}' is empty.")
         else:
             print(f"[경고] '{part1_folder}' folder doesn't exist. I need to run Part1 first.")
+
+        # 기존 part2 폴더가 있으면 삭제
+        if os.path.exists(part2_folder):
+            try:
+                shutil.rmtree(part2_folder)
+                print(f"기존 '{part2_folder}' deleted for fresh start.")
+            except Exception as e:
+                print(f"Part2 folder deleting error: {e}")
 
         # part2 폴더 생성
         os.makedirs(part2_folder, exist_ok=True)
